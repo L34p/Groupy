@@ -14,32 +14,64 @@ function GroupMessageCtrl($rootScope, $scope, $routeParams, $location, GroupServ
     let
         page = 1,
         group,
-        params = $location.search(),
-        search_keyword = params.search_keyword,
-        hashtags = params.hashtags ? (angular.isArray(params.hashtags) ? params.hashtags : [params.hashtags]) : null;
+        params,
+        search_keyword,
+        hashtags;
+
+    setParams();
 
     $rootScope.$on('$viewContentLoaded', ()=>{
         $('.ui.dropdown').dropdown();
-        if(hashtags) {
-            $timeout(()=>{
+        $timeout(()=>{
+            setParams();
+            if(hashtags) {
                 hashtags.forEach((e)=> {
                     $('.ui.dropdown').dropdown('set selected', e);
                 });
-            }, 100);
+            }
+        }, 100);
+    });
+
+    function setParams() {
+        params = $location.search();
+        search_keyword = params.search_keyword || null;
+        hashtags = params.hashtags
+            ? (angular.isArray(params.hashtags)
+                ? params.hashtags
+                : [params.hashtags])
+            : null;
+    }
+
+    $scope.search_keyword = search_keyword || null;
+    $scope.hashtags = hashtags || null;
+    $scope.stopInfiniteScroll = false;
+
+    $scope.$watch("facebookOn", function(newValue){
+        if(newValue && $scope.messages) {
+            $scope.messages.forEach((m)=>{
+                m.updateLikes();
+                m.updateComments();
+            });
         }
     });
 
-    $scope.search_keyword = search_keyword;
-    $scope.hashtags = hashtags;
-    $scope.stopInfiniteScroll = false;
 
+    $(document).on("message:delete", function(e, data) {
+        let id = data.id;
+        $scope.messages = $scope.messages.filter(m=>m.id !== id);
+    });
+
+    $scope.showFooter = function() {
+        return $scope.facebookOn;
+    };
 
     GroupService.setCurrentGroup($routeParams.id)
         .then((res)=> {
             group = res;
             $scope.groupName = group.name;
             $scope.groupId = group.id;
-            getMessagesOfPage(1, $location.search());
+            $scope.messages = [];
+            getMessagesOfPage(1);
         })
         .catch((err)=> {
             console.error(err);
@@ -53,10 +85,10 @@ function GroupMessageCtrl($rootScope, $scope, $routeParams, $location, GroupServ
             console.error(err);
         });
 
-    function getMessagesOfPage(page, params) {
+    function getMessagesOfPage(page = 1) {
         messageService.getMessagesByGroupIdAndPage(group.id, page, params)
             .then((messages)=> {
-                $scope.messages = messages;
+                $scope.messages = $scope.messages.concat(messages);
                 $scope.$emit('groupFeed:loaded');
                 if(messages.length == 0) {
                     $scope.stopInfiniteScroll = true;
@@ -79,8 +111,11 @@ function GroupMessageCtrl($rootScope, $scope, $routeParams, $location, GroupServ
         $scope.hashtags.push(hashtag);
     };
 
-    $scope.showMessage = function(message_id) {
-        $location.path("/message/" + message_id);
+    $scope.showMessage = function(message) {
+        messageService.setCurrentMessage(message.id)
+            .then(()=>{
+                $location.path("/message/" + message.id);
+            })
     };
 
     // FIXME: After add search feature,  we have to get message by (group.id, page, search_keyword)
@@ -88,19 +123,7 @@ function GroupMessageCtrl($rootScope, $scope, $routeParams, $location, GroupServ
     $scope.getNextPage = function () {
         if (group) {
             page += 1;
-            messageService.getMessagesByGroupIdAndPage(group.id, page, params)
-                .then((messages)=> {
-                    for (let i = 0, len = messages.length; i < len; i++) {
-                        $scope.messages.push(messages[i]);
-                    }
-                    $scope.$emit('groupFeed:loaded');
-                    if(messages.length == 0) {
-                        $scope.stopInfiniteScroll = true;
-                    }
-                })
-                .catch((err)=> {
-                    console.error(err);
-                });
+            getMessagesOfPage(page);
         }
     };
 }

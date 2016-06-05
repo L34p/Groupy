@@ -7,9 +7,9 @@ import '../service/FacebookService'
 
 let app = global.app;
 
-RootCtrl.$inject = ['$scope', '$window', '$location', 'groupService', 'facebookService'];
+RootCtrl.$inject = ['$scope', '$window', 'groupService', 'facebookService'];
 
-function RootCtrl($scope, $window, $location, groupService, facebookService) {
+function RootCtrl($scope, $window, groupService, facebookService) {
     groupService.getGroups()
         .then((groups)=>{
             $scope.groups = groups;
@@ -18,18 +18,18 @@ function RootCtrl($scope, $window, $location, groupService, facebookService) {
     $("#fb-root").on('facebook:init', ()=>{
         facebookService.getLoginStatus()
             .then((status)=>{
-                console.log(status);
+                $scope.facebookOn = facebookService.isFacebookOn();
             })
             .catch((status)=>{
-                console.log(status);
-                facebookService.login();
+                $scope.facebookOn = facebookService.isFacebookOn();
             });
 
         facebookService.watchLoginChange(
             ()=>{
-                
+                $scope.facebookOn = facebookService.isFacebookOn();
             },
             ()=>{
+                $scope.facebookOn = facebookService.isFacebookOn();
             }
         );
     });

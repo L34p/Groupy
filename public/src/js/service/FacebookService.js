@@ -8,8 +8,15 @@ let app = global.app;
 FacebookService.$inject = ['$q'];
 
 function FacebookService($q) {
+
+    const LIMIT = 20;
+
     let _this = this;
     _this.loginStatus = null;
+
+    _this.isFacebookOn = function() {
+        return _this.loginStatus === 'connected';
+    };
 
     _this.getLoginStatus = function() {
         let deferred = $q.defer();
@@ -54,7 +61,7 @@ function FacebookService($q) {
     };
 
     let fields = {
-        post: 'from,comments.limit(10).order(chronological){from,message,created_time,comments.limit(5){like_count,from,message,created_time,attachment},like_count},full_picture'
+        post: 'from,attachments.limit(10){media,url,subattachments}'
     };
     _this.getPostInfo = function(id) {
         let deferred = $q.defer();
@@ -77,7 +84,7 @@ function FacebookService($q) {
         var deferred = $q.defer();
         FB.api('/' + id + '/likes',
             'GET',
-            { limit: 20 },
+            { limit: LIMIT },
             function(res) {
                 if(res.error) {
                     deferred.reject(res.error);
@@ -93,7 +100,7 @@ function FacebookService($q) {
         var deferred = $q.defer();
         FB.api('/' + id + '/comments',
             'GET',
-            { limit: 20 },
+            { limit: LIMIT },
             function(res){
                 if(res.error) {
                     deferred.reject(res.error);

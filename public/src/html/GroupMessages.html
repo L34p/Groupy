@@ -1,7 +1,7 @@
 <div infinite-scroll='getNextPage()'
      infinite-scroll-listen-for-event="groupFeed:loaded"
      infinite-scroll-disabled="stopInfiniteScroll"
-     infinite-scroll-distance='1' id="groupFeed" class="ui container">
+     infinite-scroll-distance='1' id="group-feed" class="ui container">
     <div class="ui segment">
         <div class="ui header">{{groupName}}</div>
         <div class="ui secondary pointing menu">
@@ -32,25 +32,32 @@
         검색결과
     </h4>
 
+    <!--
     <div class="ui info message" style="margin-bottom:20px">
         <i class="close link icon"></i>
         조건에 맞는 7705개의 글을 찾았습니다.
     </div>
+    -->
 
     <div class="ui three stackable cards">
-        <div ng-click="showMessage(message.id)" ng-repeat="message in messages" class="ui link card">
-            <div class="content">
-                <div class="header">#다판다</div>
-                <div class="meta">{{message.created_time}}</div>
-                <div ng-bind-html="message.message" class="description"></div>
+        <div id="{{m.id}}" ng-click="showMessage(m)"
+             ng-repeat="m in messages" class="ui link card">
+            <div class="message body content">
+                <div class="header">
+                    <span class="hashtag" ng-repeat="h in m.hashtags">{{h.hashtag}}</span>
+                </div>
+                <div class="meta">{{m.created_time}}</div>
+                <div ng-bind-html="m.message" class="description"></div>
             </div>
-            <div class="content">
+            <div class="message footer content" ng-show="showFooter()">
                 <span class="right floated">
                     <i class="heart outline like icon"></i>
-                    17 likes
+                    {{m.likes}} likes
                 </span>
-                <i class="comment icon"></i>
-                3 comments
+                <span class="left floated">
+                    <i class="comment icon"></i>
+                    {{m.comments.length}} comments
+                </span>
             </div>
         </div>
     </div>
